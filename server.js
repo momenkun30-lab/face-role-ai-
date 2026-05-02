@@ -5,73 +5,107 @@ const fs = require('fs');
 
 const app = express();
 app.use(express.json());
-
-// جعل المجلد الرئيسي ومجلد الرفع متاحين للجميع
 app.use(express.static(__dirname));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// إعداد نظام رفع الصور (Multer)
+// إعداد نظام رفع الصور
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const dir = './uploads';
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         cb(null, dir);
     },
     filename: (req, file, cb) => {
-        // حفظ الصورة باسم فريد مع الاحتفاظ بالامتداد
         cb(null, 'ad-' + Date.now() + path.extname(file.originalname));
     }
 });
 const upload = multer({ storage: storage });
 
-// متغيرات النظام الإحصائية
-let totalViewsCount = 0; // الزيارات التي حدثت منذ تشغيل السيرفر (تُضاف للـ 113 ألف في الواجهة)
-let currentAdPath = ""; // سيتم تخزين رابط الإعلان المرفوع هنا
+// متغيرات النظام القابلة للتحكم من لوحة الإدارة
+let config = {
+    totalViews: 113000,
+    activeUsers: 9452,
+    currentAd: "",
+    nextAd: "",
+    adSwitchTime: null // توقيت التبديل التلقائي
+};
 
-// 1. نقطة نهاية لجلب بيانات الموقع (الزيارات والإعلانات)
+// 1. جلب بيانات الموقع (للواجهة الرئيسية)
 app.get('/api/site-data', (req, res) => {
-    // زيادة حقيقية طفيفة مع كل طلب لضمان عدم النقصان
-    totalViewsCount += Math.floor(Math.random() * 2) + 1;
+    // زيادة تلقائية بسيطة لضمان حركة الأرقام
+    config.totalViews += Math.floor(Math.random() * 3);
     
+    // فحص إذا كان هناك إعلان مجدول يجب تفعيله الآن
+    if (config.adSwitchTime && Date.now() >= config.adSwitchTime) {
+        if (config.nextAd) {
+            config.currentAd = config.nextAd;
+            config.nextAd = "";
+        }
+        config.adSwitchTime = null;
+    }
+
     res.json({
-        totalViews: totalViewsCount,
-        currentAd: currentAdPath
+        totalViews: config.totalViews,
+        activeUsers: config.activeUsers,
+        currentAd: config.currentAd
     });
 });
 
-// 2. نقطة نهاية لرفع الإعلان الجديد (من صفحة admin.html)
+// 2. رفع إعلان جديد (فوري أو قادم)
 app.post('/api/upload-ad', upload.single('adImage'), (req, res) => {
     if (req.file) {
-        currentAdPath = `/uploads/${req.file.filename}`;
-        console.log("تم تحديث الإعلان بنجاح:", currentAdPath);
-        res.json({ success: true, url: currentAdPath });
+        const adPath = `/uploads/${req.file.filename}`;
+        // إذا كان هناك إعلان حالي، ضعه كإعلان قادم، وإلا ضعه كحالي
+        if (!config.currentAd) {
+            config.currentAd = adPath;
+        } else {
+            config.nextAd = adPath;
+        }
+        res.json({ success: true, url: adPath });
     } else {
-        res.status(400).json({ success: false, message: "فشل رفع الصورة" });
+        res.status(400).json({ success: false });
     }
 });
 
-// 3. توجيه المستخدمين لصفحة الواجهة الرئيسية
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// 3. حذف الإعلان الحالي
+app.post('/api/delete-ad', (req, res) => {
+    config.currentAd = "";
+    config.nextAd = "";
+    config.adSwitchTime = null;
+    res.json({ success: true });
 });
 
-// 4. توجيه للإدارة (يتم طلب الباسوورد في الواجهة الأمامية أولاً)
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
+// 4. تحديث الإحصائيات يدوياً من لوحة التحكم
+app.post('/api/update-manual-stats', (req, res) => {
+    const { type, value } = req.body;
+    const numValue = parseInt(value);
+    
+    if (type === 'total') config.totalViews = numValue;
+    if (type === 'active') config.activeUsers = numValue;
+    
+    res.json({ success: true });
+});
+
+// 5. ضبط مؤقت تبديل الإعلان (بالدقائق)
+app.post('/api/set-timer', (req, res) => {
+    const { minutes } = req.body;
+    if (minutes > 0) {
+        config.adSwitchTime = Date.now() + (minutes * 60 * 1000);
+        res.json({ success: true, switchAt: new Date(config.adSwitchTime).toLocaleTimeString() });
+    } else {
+        res.status(400).json({ success: false });
+    }
 });
 
 // تشغيل السيرفر
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    // إنشاء مجلد uploads تلقائياً إذا لم يكن موجوداً عند بدء التشغيل
-    if (!fs.existsSync('./uploads')) {
-        fs.mkdirSync('./uploads');
-    }
-    console.log(`========================================`);
-    console.log(`🚀 Face Role AI Server is LIVE!`);
-    console.log(`📍 Port: ${PORT}`);
-    console.log(`🔐 Admin Password: SDaderta`);
-    console.log(`========================================`);
+    if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads');
+    console.log(`
+    =============================================
+    🚀 سيرفر Face Role AI المطور يعمل الآن!
+    📍 المنفذ: ${PORT}
+    🔐 كلمة سر الإدارة: SDaderta
+    =============================================
+    `);
 });
