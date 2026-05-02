@@ -10,24 +10,23 @@ app.use('/uploads', express.static('uploads'));
 
 const upload = multer({ dest: 'uploads/' });
 
-let siteData = {
-    totalViews: 0,
-    liveNow: 1,
-    currentAd: ""
-};
+// إحصائيات تبدأ من الأرقام التي حددتها
+let totalViews = 113000; 
 
-// إحصائيات الموقع
 app.get('/api/site-data', (req, res) => {
-    siteData.totalViews++;
-    // محاكاة المتصلين حالياً
-    siteData.liveNow = Math.floor(Math.random() * 5) + 1;
-    res.json(siteData);
+    // زيادة حقيقية طفيفة مع كل طلب لجعل الرقم في تصاعد دائم
+    totalViews += Math.floor(Math.random() * 3) + 1;
+    
+    // إرسال البيانات للمتصفح (المتصفح سيتولى حساب الخوارزمية الرياضية للمتصلين الآن)
+    res.json({
+        totalViews: totalViews,
+        currentAd: global.currentAd || ""
+    });
 });
 
-// استقبال صورة الإعلان
 app.post('/api/upload-ad', upload.single('adImage'), (req, res) => {
     if (req.file) {
-        siteData.currentAd = `/uploads/${req.file.filename}`;
+        global.currentAd = `/uploads/${req.file.filename}`;
         res.json({ success: true });
     }
 });
