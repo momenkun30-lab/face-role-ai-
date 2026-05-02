@@ -1,33 +1,39 @@
 const express = require('express');
 const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
+
 const app = express();
-
 app.use(express.json());
-// السماح بالوصول للملفات في المجلد الرئيسي
 app.use(express.static(__dirname));
+app.use('/uploads', express.static('uploads'));
 
-// قاعدة بيانات بسيطة في الذاكرة
-let siteConfig = {
-    announcement: "مرحباً بك في Face Role AI! اكتشف شخصيتك السينمائية الآن 🎬",
-    stats: { users: 1250, analyses: 5430 }
+const upload = multer({ dest: 'uploads/' });
+
+let siteData = {
+    totalViews: 0,
+    liveNow: 1,
+    currentAd: ""
 };
 
-// نقطة نهاية لجلب الإعدادات (API)
-app.get('/api/config', (req, res) => {
-    res.json(siteConfig);
+// إحصائيات الموقع
+app.get('/api/site-data', (req, res) => {
+    siteData.totalViews++;
+    // محاكاة المتصلين حالياً
+    siteData.liveNow = Math.floor(Math.random() * 5) + 1;
+    res.json(siteData);
 });
 
-// استقبال طلبات تحديث الإحصائيات
-app.post('/api/analyze', (req, res) => {
-    siteConfig.stats.analyses++;
-    siteConfig.stats.users += 1;
-    res.json({ success: true, stats: siteConfig.stats });
-});
-
-// توجيه أي رابط للملف الرئيسي
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// استقبال صورة الإعلان
+app.post('/api/upload-ad', upload.single('adImage'), (req, res) => {
+    if (req.file) {
+        siteData.currentAd = `/uploads/${req.file.filename}`;
+        res.json({ success: true });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Face Role AI is LIVE on port ${PORT}`));
+app.listen(PORT, () => {
+    if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads');
+    console.log("Server is running...");
+});
