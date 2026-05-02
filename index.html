@@ -2,214 +2,138 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Face Role AI | ذكاء اصطناعي سينمائي</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Role AI | الإدارة الاحترافية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
-
     <style>
-        :root {
-            --bg-dark: #0b0c10;
-            --bg-panel: #1f2833;
-            --accent-gold: #ffd700;
-            --accent-purple: #6f42c1;
-            --text-light: #c5c6c7;
-            --text-white: #ffffff;
-            --danger: #ff4d4d;
-            --border-radius: 16px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        :root { --accent: #ffd700; --bg: #0b0c10; --panel: #1f2833; --purple: #6f42c1; }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); color: white; margin: 0; padding-top: 140px; }
+
+        /* منطقة الإعلانات الثابتة في الأعلى */
+        #ad-top-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 120px;
+            background: #000; z-index: 1000; border-bottom: 3px solid var(--accent);
+            display: flex; justify-content: center; align-items: center; overflow: hidden;
         }
+        #ad-top-layer img { width: 100%; height: 100%; object-fit: cover; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Cairo', sans-serif;
-            background-color: var(--bg-dark);
-            background-image: radial-gradient(circle at top right, #1a1a2e 0%, var(--bg-dark) 60%);
-            color: var(--text-white);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; text-align: center; }
+        
+        /* شريط الإحصائيات */
+        .stats-container {
+            display: flex; gap: 15px; margin-bottom: 30px;
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;
         }
+        .stat-card { flex: 1; text-align: center; }
+        .stat-card span { display: block; font-size: 1.2rem; color: var(--accent); font-weight: bold; }
 
-        .container { max-width: 600px; width: 100%; margin: 0 auto; padding: 20px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-
-        /* Header */
-        header { text-align: center; margin-bottom: 30px; }
-        h1 { font-size: 2.2rem; font-weight: 900; background: linear-gradient(135deg, var(--accent-gold), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .subtitle { color: var(--text-light); margin-top: 10px; }
-
-        /* Upload Zone */
+        /* منطقة الرفع */
         .upload-zone {
-            width: 100%; height: 300px; border: 2px dashed rgba(255, 215, 0, 0.3);
-            border-radius: var(--border-radius); background: rgba(255, 255, 255, 0.03);
+            width: 100%; height: 250px; border: 2px dashed rgba(255,215,0,0.3);
+            border-radius: 20px; background: rgba(255,255,255,0.02);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            position: relative; cursor: pointer; transition: var(--transition);
+            position: relative; cursor: pointer;
         }
-        .upload-zone.has-file { border-style: solid; border-color: var(--accent-purple); }
-        
-        .file-input-cover { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
-        
-        #preview-img { width: 100%; height: 100%; object-fit: cover; border-radius: 14px; display: none; }
+        #preview-img { width: 100%; height: 100%; object-fit: cover; border-radius: 18px; display: none; }
+        .file-input { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
-        /* Buttons */
         .btn-main {
             width: 100%; padding: 18px; border: none; border-radius: 50px;
             font-size: 1.1rem; font-weight: 700; cursor: pointer;
-            background: linear-gradient(90deg, var(--accent-purple), #8a2be2);
-            color: white; margin-top: 20px; transition: 0.3s;
-            display: flex; justify-content: center; align-items: center; gap: 10px;
-            opacity: 0.6; pointer-events: none;
+            background: linear-gradient(90deg, var(--purple), #8a2be2);
+            color: white; margin-top: 20px; display: none;
         }
-        .btn-main.active { opacity: 1; pointer-events: all; box-shadow: 0 5px 20px rgba(111, 66, 193, 0.5); }
 
-        /* Scanning Animation */
-        #view-loading { display: none; text-align: center; width: 100%; }
-        .scan-frame {
-            width: 200px; height: 200px; margin: 0 auto 20px; border-radius: 50%;
-            border: 3px solid var(--accent-gold); position: relative; overflow: hidden;
+        /* لوحة التحكم */
+        .admin-panel {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: var(--panel); padding: 30px; border-radius: 20px;
+            z-index: 2000; display: none; border: 2px solid var(--accent); width: 320px;
         }
-        .scanner-line {
-            position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-            background: var(--accent-gold); box-shadow: 0 0 15px var(--accent-gold);
-            animation: scan 1.5s infinite alternate;
-        }
-        @keyframes scan { from { top: 0; } to { top: 100%; } }
-
-        /* Result Card */
-        #view-result { display: none; width: 100%; }
-        .result-card { background: var(--bg-panel); border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
-        .card-hero { height: 250px; position: relative; }
-        .card-hero img { width: 100%; height: 100%; object-fit: cover; }
-        .card-content { padding: 20px; }
-        .role-name { font-size: 1.8rem; color: var(--accent-gold); margin-bottom: 10px; }
-        .story-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border-right: 4px solid var(--accent-purple); }
-
-        .hidden { display: none !important; }
+        .btn-save { background: var(--accent); color: black; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
+    <div id="ad-top-layer">
+        <img id="current-ad-img" src="https://via.placeholder.com/1200x200?text=AD+SPACE" alt="Ad">
+    </div>
+
     <div class="container">
-        <header id="header-area">
-            <h1>Face Role AI 🎬</h1>
-            <p class="subtitle">الذكاء الاصطناعي سيحلل ملامحك ليجد دورك السينمائي</p>
-        </header>
+        <h1 id="logo" style="cursor:pointer; font-weight: 900;">Face Role AI 🎬</h1>
+        
+        <div class="stats-container">
+            <div class="stat-card">إجمالي الزيارات <span id="total-views">0</span></div>
+            <div class="stat-card">متصل الآن <span id="live-users">1</span></div>
+        </div>
 
-        <section id="view-upload" style="width: 100%;">
-            <div class="upload-zone" id="drop-zone">
-                <input type="file" id="file-input" class="file-input-cover" accept="image/*">
-                <div id="upload-ui">
-                    <p style="font-size: 3rem;">🖼️</p>
-                    <p>اضغط أو اسحب صورتك هنا</p>
-                </div>
-                <img id="preview-img" src="" alt="Preview">
+        <div id="view-upload">
+            <div class="upload-zone">
+                <input type="file" id="user-photo" class="file-input" accept="image/*">
+                <div id="upload-prompt">📸 ارفع صورتك للتحليل</div>
+                <img id="preview-img">
             </div>
-            <button id="analyze-btn" class="btn-main">بدء التحليل بالذكاء الاصطناعي 🚀</button>
-        </section>
+            <button id="analyze-btn" class="btn-main">بدء التحليل الذكي 🚀</button>
+        </div>
+    </div>
 
-        <section id="view-loading">
-            <div class="scan-frame">
-                <img id="scan-preview" src="" style="width:100%; height:100%; object-fit:cover;">
-                <div class="scanner-line"></div>
-            </div>
-            <h3 id="loading-status">جاري تشغيل محرك الذكاء الاصطناعي...</h3>
-        </section>
-
-        <section id="view-result">
-            <div class="result-card">
-                <div class="card-hero">
-                    <img id="res-img" src="">
-                </div>
-                <div class="card-content">
-                    <h2 id="res-role" class="role-name">جارٍ التحديد...</h2>
-                    <div class="story-box">
-                        <p id="res-story"></p>
-                    </div>
-                    <p id="res-reason" style="margin-top:15px; font-size:0.9rem; color:var(--text-light);"></p>
-                    <button onclick="location.reload()" class="btn-main active">تجربة مرة أخرى 🔄</button>
-                </div>
-            </div>
-        </section>
+    <div id="admin-box" class="admin-panel">
+        <h3>إدارة الإعلانات ⚙️</h3>
+        <p style="font-size: 0.8rem;">اختر صورة الإعلان الجديد:</p>
+        <input type="file" id="ad-file-input" accept="image/*">
+        <button class="btn-save" onclick="uploadAd()">تحديث الإعلان فوراً</button>
+        <button onclick="document.getElementById('admin-box').style.display='none'" style="background:none; color:white; border:none; margin-top:10px; cursor:pointer;">إغلاق</button>
     </div>
 
     <script>
-        const ROLES = {
-            happy: { title: "البطل الكوميدي", story: "أنت نجم الأفلام العائلية، ملامحك المبهجة تجعل الجمهور يعشقك فور ظهورك على الشاشة.", reason: "الذكاء الاصطناعي رصد تعابير سعادة وثقة في وجهك." },
-            sad: { title: "بطل الدراما العميقة", story: "ملامحك تحمل عمقاً سينمائياً نادراً، أنت الشخص الذي يبكي الجميع في نهاية الفيلم ويحصد الجوائز.", reason: "تم رصد ملامح هادئة وحزينة تدل على عمق عاطفي كبير." },
-            angry: { title: "الشرير الأسطوري", story: "أنت الخصم الذي يرتجف منه الجميع. نظراتك القوية تجعلك المرشح الأول لأدوار القادة الأشرار.", reason: "حدة ملامحك تدل على قوة شخصية وسلطة طاغية." },
-            surprised: { title: "بطل أفلام الغموض", story: "أنت الشخص الذي يكتشف الحقيقة في اللحظة الأخيرة. ملامحك الفضولية مثالية لأدوار المحققين.", reason: "تعابير وجهك توحي بالدهشة والذكاء وسرعة البديهة." },
-            neutral: { title: "العميل السري الغامض", story: "وجهك لا يقرأه أحد، مما يجعلك أخطر جاسوس في عالم السينما. هدوؤك هو قوتك.", reason: "توازن ملامحك يشير إلى انضباط عالي وقدرة على إخفاء المشاعر." }
-        };
-
-        const fileInput = document.getElementById('file-input');
+        const fileInput = document.getElementById('user-photo');
         const previewImg = document.getElementById('preview-img');
         const analyzeBtn = document.getElementById('analyze-btn');
-        let modelsLoaded = false;
 
-        // 1. تحميل نماذج الذكاء الاصطناعي فور فتح الموقع
-        async function loadAI() {
+        // تحميل الذكاء الاصطناعي
+        async function initAI() {
             const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
             await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
             await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
-            modelsLoaded = true;
-            console.log("AI Models Loaded");
         }
 
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    previewImg.src = event.target.result;
-                    previewImg.style.display = 'block';
-                    document.getElementById('upload-ui').style.display = 'none';
-                    analyzeBtn.classList.add('active');
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        analyzeBtn.addEventListener('click', async () => {
-            if (!modelsLoaded) { alert("جاري تحميل الذكاء الاصطناعي، انتظر ثانية..."); return; }
-
-            // تبديل الشاشات
-            document.getElementById('view-upload').style.display = 'none';
-            document.getElementById('view-loading').style.display = 'block';
-            document.getElementById('scan-preview').src = previewImg.src;
-
-            // 2. البدء في تحليل الوجه الحقيقي
-            const detections = await faceapi.detectAllFaces(previewImg, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
-
-            setTimeout(() => {
-                if (detections.length > 0) {
-                    // الحصول على أعلى تعبير وجه (سعادة، حزن، إلخ)
-                    const expressions = detections[0].expressions;
-                    const mainEmotion = Object.keys(expressions).reduce((a, b) => expressions[a] > expressions[b] ? a : b);
-                    showResult(mainEmotion);
-                } else {
-                    // إذا لم يجد وجهاً، يختار "neutral" بشكل افتراضي
-                    showResult('neutral');
-                }
-            }, 3000);
-        });
-
-        function showResult(emotion) {
-            const role = ROLES[emotion] || ROLES.neutral;
-            
-            document.getElementById('view-loading').style.display = 'none';
-            document.getElementById('header-area').style.display = 'none';
-            document.getElementById('view-result').style.display = 'block';
-
-            document.getElementById('res-img').src = previewImg.src;
-            document.getElementById('res-role').innerText = role.title;
-            document.getElementById('res-story').innerText = role.story;
-            document.getElementById('res-reason').innerText = "💡 تقرير الذكاء الاصطناعي: " + role.reason;
+        // تحديث الإحصائيات والإعلان
+        async function syncData() {
+            const res = await fetch('/api/site-data');
+            const data = await res.json();
+            document.getElementById('total-views').innerText = data.totalViews;
+            document.getElementById('live-users').innerText = data.liveNow;
+            if(data.currentAd) document.getElementById('current-ad-img').src = data.currentAd;
         }
 
-        window.onload = loadAI;
+        // رفع الإعلان من لوحة التحكم
+        async function uploadAd() {
+            const adFile = document.getElementById('ad-file-input').files[0];
+            if(!adFile) return alert("اختر صورة أولاً");
+            const fd = new FormData();
+            fd.append('adImage', adFile);
+            await fetch('/api/upload-ad', { method: 'POST', body: fd });
+            alert("تم التحديث!");
+            location.reload();
+        }
+
+        fileInput.onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                previewImg.src = ev.target.result;
+                previewImg.style.display = 'block';
+                document.getElementById('upload-prompt').style.display = 'none';
+                analyzeBtn.style.display = 'block';
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        };
+
+        document.getElementById('logo').ondblclick = () => {
+            document.getElementById('admin-box').style.display = 'block';
+        };
+
+        window.onload = () => { initAI(); syncData(); setInterval(syncData, 5000); };
     </script>
 </body>
 </html>
