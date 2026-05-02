@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Face Role AI | ذكاء اصطناعي سينمائي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0b0c10;
+            --bg-panel: #1f2833;
+            --accent-gold: #ffd700;
+            --accent-purple: #6f42c1;
+            --text-light: #c5c6c7;
+            --text-white: #ffffff;
+            --danger: #ff4d4d;
+            --border-radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at top right, #1a1a2e 0%, var(--bg-dark) 60%);
+            color: var(--text-white);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .container { max-width: 600px; width: 100%; margin: 0 auto; padding: 20px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        /* Header */
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { font-size: 2.2rem; font-weight: 900; background: linear-gradient(135deg, var(--accent-gold), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { color: var(--text-light); margin-top: 10px; }
+
+        /* Upload Zone */
+        .upload-zone {
+            width: 100%; height: 300px; border: 2px dashed rgba(255, 215, 0, 0.3);
+            border-radius: var(--border-radius); background: rgba(255, 255, 255, 0.03);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            position: relative; cursor: pointer; transition: var(--transition);
+        }
+        .upload-zone.has-file { border-style: solid; border-color: var(--accent-purple); }
+        
+        .file-input-cover { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
+        
+        #preview-img { width: 100%; height: 100%; object-fit: cover; border-radius: 14px; display: none; }
+
+        /* Buttons */
+        .btn-main {
+            width: 100%; padding: 18px; border: none; border-radius: 50px;
+            font-size: 1.1rem; font-weight: 700; cursor: pointer;
+            background: linear-gradient(90deg, var(--accent-purple), #8a2be2);
+            color: white; margin-top: 20px; transition: 0.3s;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+            opacity: 0.6; pointer-events: none;
+        }
+        .btn-main.active { opacity: 1; pointer-events: all; box-shadow: 0 5px 20px rgba(111, 66, 193, 0.5); }
+
+        /* Scanning Animation */
+        #view-loading { display: none; text-align: center; width: 100%; }
+        .scan-frame {
+            width: 200px; height: 200px; margin: 0 auto 20px; border-radius: 50%;
+            border: 3px solid var(--accent-gold); position: relative; overflow: hidden;
+        }
+        .scanner-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--accent-gold); box-shadow: 0 0 15px var(--accent-gold);
+            animation: scan 1.5s infinite alternate;
+        }
+        @keyframes scan { from { top: 0; } to { top: 100%; } }
+
+        /* Result Card */
+        #view-result { display: none; width: 100%; }
+        .result-card { background: var(--bg-panel); border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+        .card-hero { height: 250px; position: relative; }
+        .card-hero img { width: 100%; height: 100%; object-fit: cover; }
+        .card-content { padding: 20px; }
+        .role-name { font-size: 1.8rem; color: var(--accent-gold); margin-bottom: 10px; }
+        .story-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border-right: 4px solid var(--accent-purple); }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header id="header-area">
+            <h1>Face Role AI 🎬</h1>
+            <p class="subtitle">الذكاء الاصطناعي سيحلل ملامحك ليجد دورك السينمائي</p>
+        </header>
+
+        <section id="view-upload" style="width: 100%;">
+            <div class="upload-zone" id="drop-zone">
+                <input type="file" id="file-input" class="file-input-cover" accept="image/*">
+                <div id="upload-ui">
+                    <p style="font-size: 3rem;">🖼️</p>
+                    <p>اضغط أو اسحب صورتك هنا</p>
+                </div>
+                <img id="preview-img" src="" alt="Preview">
+            </div>
+            <button id="analyze-btn" class="btn-main">بدء التحليل بالذكاء الاصطناعي 🚀</button>
+        </section>
+
+        <section id="view-loading">
+            <div class="scan-frame">
+                <img id="scan-preview" src="" style="width:100%; height:100%; object-fit:cover;">
+                <div class="scanner-line"></div>
+            </div>
+            <h3 id="loading-status">جاري تشغيل محرك الذكاء الاصطناعي...</h3>
+        </section>
+
+        <section id="view-result">
+            <div class="result-card">
+                <div class="card-hero">
+                    <img id="res-img" src="">
+                </div>
+                <div class="card-content">
+                    <h2 id="res-role" class="role-name">جارٍ التحديد...</h2>
+                    <div class="story-box">
+                        <p id="res-story"></p>
+                    </div>
+                    <p id="res-reason" style="margin-top:15px; font-size:0.9rem; color:var(--text-light);"></p>
+                    <button onclick="location.reload()" class="btn-main active">تجربة مرة أخرى 🔄</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const ROLES = {
+            happy: { title: "البطل الكوميدي", story: "أنت نجم الأفلام العائلية، ملامحك المبهجة تجعل الجمهور يعشقك فور ظهورك على الشاشة.", reason: "الذكاء الاصطناعي رصد تعابير سعادة وثقة في وجهك." },
+            sad: { title: "بطل الدراما العميقة", story: "ملامحك تحمل عمقاً سينمائياً نادراً، أنت الشخص الذي يبكي الجميع في نهاية الفيلم ويحصد الجوائز.", reason: "تم رصد ملامح هادئة وحزينة تدل على عمق عاطفي كبير." },
+            angry: { title: "الشرير الأسطوري", story: "أنت الخصم الذي يرتجف منه الجميع. نظراتك القوية تجعلك المرشح الأول لأدوار القادة الأشرار.", reason: "حدة ملامحك تدل على قوة شخصية وسلطة طاغية." },
+            surprised: { title: "بطل أفلام الغموض", story: "أنت الشخص الذي يكتشف الحقيقة في اللحظة الأخيرة. ملامحك الفضولية مثالية لأدوار المحققين.", reason: "تعابير وجهك توحي بالدهشة والذكاء وسرعة البديهة." },
+            neutral: { title: "العميل السري الغامض", story: "وجهك لا يقرأه أحد، مما يجعلك أخطر جاسوس في عالم السينما. هدوؤك هو قوتك.", reason: "توازن ملامحك يشير إلى انضباط عالي وقدرة على إخفاء المشاعر." }
+        };
+
+        const fileInput = document.getElementById('file-input');
+        const previewImg = document.getElementById('preview-img');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        let modelsLoaded = false;
+
+        // 1. تحميل نماذج الذكاء الاصطناعي فور فتح الموقع
+        async function loadAI() {
+            const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+            modelsLoaded = true;
+            console.log("AI Models Loaded");
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    previewImg.src = event.target.result;
+                    previewImg.style.display = 'block';
+                    document.getElementById('upload-ui').style.display = 'none';
+                    analyzeBtn.classList.add('active');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        analyzeBtn.addEventListener('click', async () => {
+            if (!modelsLoaded) { alert("جاري تحميل الذكاء الاصطناعي، انتظر ثانية..."); return; }
+
+            // تبديل الشاشات
+            document.getElementById('view-upload').style.display = 'none';
+            document.getElementById('view-loading').style.display = 'block';
+            document.getElementById('scan-preview').src = previewImg.src;
+
+            // 2. البدء في تحليل الوجه الحقيقي
+            const detections = await faceapi.detectAllFaces(previewImg, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+
+            setTimeout(() => {
+                if (detections.length > 0) {
+                    // الحصول على أعلى تعبير وجه (سعادة، حزن، إلخ)
+                    const expressions = detections[0].expressions;
+                    const mainEmotion = Object.keys(expressions).reduce((a, b) => expressions[a] > expressions[b] ? a : b);
+                    showResult(mainEmotion);
+                } else {
+                    // إذا لم يجد وجهاً، يختار "neutral" بشكل افتراضي
+                    showResult('neutral');
+                }
+            }, 3000);
+        });
+
+        function showResult(emotion) {
+            const role = ROLES[emotion] || ROLES.neutral;
+            
+            document.getElementById('view-loading').style.display = 'none';
+            document.getElementById('header-area').style.display = 'none';
+            document.getElementById('view-result').style.display = 'block';
+
+            document.getElementById('res-img').src = previewImg.src;
+            document.getElementById('res-role').innerText = role.title;
+            document.getElementById('res-story').innerText = role.story;
+            document.getElementById('res-reason').innerText = "💡 تقرير الذكاء الاصطناعي: " + role.reason;
+        }
+
+        window.onload = loadAI;
+    </script>
+</body>
+</html>
