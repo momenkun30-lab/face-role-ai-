@@ -4,108 +4,98 @@ const multer = require('multer');
 const fs = require('fs');
 
 const app = express();
+const DATA_FILE = './site-config.json'; // ملف حفظ البيانات الدائم
+
 app.use(express.json());
 app.use(express.static(__dirname));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// إعداد نظام رفع الصور
+// --- 1. نظام تتبع المستخدمين الحقيقيين ---
+let realActiveUsers = new Set(); 
+
+// --- 2. إدارة البيانات (حفظ وتحميل) ---
+function saveConfig(config) {
+    try {
+        fs.writeFileSync(DATA_FILE, JSON.stringify(config, null, 2));
+    } catch (err) {
+        console.error("خطأ في حفظ البيانات:", err);
+    }
+}
+
+function loadConfig() {
+    if (!fs.existsSync(DATA_FILE)) {
+        const initial = { totalViews: 113000, activeUsers: 9452, currentAd: "" };
+        saveConfig(initial);
+        return initial;
+    }
+    return JSON.parse(fs.readFileSync(DATA_FILE));
+}
+
+let config = loadConfig();
+
+// --- 3. إعداد رفع الصور (الإعلانات) ---
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = './uploads';
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
-    },
+    destination: './uploads',
     filename: (req, file, cb) => {
         cb(null, 'ad-' + Date.now() + path.extname(file.originalname));
     }
 });
 const upload = multer({ storage: storage });
 
-// متغيرات النظام القابلة للتحكم من لوحة الإدارة
-let config = {
-    totalViews: 113000,
-    activeUsers: 9452,
-    currentAd: "",
-    nextAd: "",
-    adSwitchTime: null // توقيت التبديل التلقائي
-};
+// --- 4. المسارات البرمجية (APIs) ---
 
-// 1. جلب بيانات الموقع (للواجهة الرئيسية)
+// جلب بيانات الموقع + تتبع الزوار الحقيقيين
 app.get('/api/site-data', (req, res) => {
-    // زيادة تلقائية بسيطة لضمان حركة الأرقام
-    config.totalViews += Math.floor(Math.random() * 3);
-    
-    // فحص إذا كان هناك إعلان مجدول يجب تفعيله الآن
-    if (config.adSwitchTime && Date.now() >= config.adSwitchTime) {
-        if (config.nextAd) {
-            config.currentAd = config.nextAd;
-            config.nextAd = "";
-        }
-        config.adSwitchTime = null;
-    }
+    // تتبع الـ IP للمستخدم الحالي
+    const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    realActiveUsers.add(userIp);
+
+    // اعتبار المستخدم غير نشط بعد 30 ثانية من آخر طلب
+    setTimeout(() => { realActiveUsers.delete(userIp); }, 30000);
+
+    // زيادة وهمية طفيفة للإحصائيات
+    config.totalViews += Math.floor(Math.random() * 2);
 
     res.json({
-        totalViews: config.totalViews,
-        activeUsers: config.activeUsers,
-        currentAd: config.currentAd
+        ...config,
+        realUsersCount: realActiveUsers.size // إرسال عدد المستخدمين الحقيقيين
     });
 });
 
-// 2. رفع إعلان جديد (فوري أو قادم)
+// رفع إعلان جديد
 app.post('/api/upload-ad', upload.single('adImage'), (req, res) => {
     if (req.file) {
-        const adPath = `/uploads/${req.file.filename}`;
-        // إذا كان هناك إعلان حالي، ضعه كإعلان قادم، وإلا ضعه كحالي
-        if (!config.currentAd) {
-            config.currentAd = adPath;
-        } else {
-            config.nextAd = adPath;
-        }
-        res.json({ success: true, url: adPath });
-    } else {
-        res.status(400).json({ success: false });
+        config.currentAd = `/uploads/${req.file.filename}`;
+        saveConfig(config);
+        res.json({ success: true });
     }
 });
 
-// 3. حذف الإعلان الحالي
-app.post('/api/delete-ad', (req, res) => {
-    config.currentAd = "";
-    config.nextAd = "";
-    config.adSwitchTime = null;
-    res.json({ success: true });
-});
-
-// 4. تحديث الإحصائيات يدوياً من لوحة التحكم
+// تحديث الإحصائيات (الوهمية) يدوياً
 app.post('/api/update-manual-stats', (req, res) => {
     const { type, value } = req.body;
-    const numValue = parseInt(value);
-    
-    if (type === 'total') config.totalViews = numValue;
-    if (type === 'active') config.activeUsers = numValue;
-    
+    if (type === 'total') config.totalViews = parseInt(value);
+    if (type === 'active') config.activeUsers = parseInt(value);
+    saveConfig(config);
     res.json({ success: true });
 });
 
-// 5. ضبط مؤقت تبديل الإعلان (بالدقائق)
-app.post('/api/set-timer', (req, res) => {
-    const { minutes } = req.body;
-    if (minutes > 0) {
-        config.adSwitchTime = Date.now() + (minutes * 60 * 1000);
-        res.json({ success: true, switchAt: new Date(config.adSwitchTime).toLocaleTimeString() });
-    } else {
-        res.status(400).json({ success: false });
-    }
+// حذف الإعلان
+app.post('/api/delete-ad', (req, res) => {
+    config.currentAd = "";
+    saveConfig(config);
+    res.json({ success: true });
 });
 
-// تشغيل السيرفر
+// --- 5. تشغيل السيرفر ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads');
     console.log(`
     =============================================
-    🚀 سيرفر Face Role AI المطور يعمل الآن!
-    📍 المنفذ: ${PORT}
-    🔐 كلمة سر الإدارة: SDaderta
+    ✅ السيرفر المكتمل يعمل الآن
+    👥 نظام تتبع الحقيقيين: مفعل
+    💾 التخزين الدائم: مفعل
     =============================================
     `);
 });
