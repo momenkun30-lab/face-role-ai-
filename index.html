@@ -3,131 +3,78 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Face Role AI | النظام الاحترافي</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Role AI | النسخة النهائية المحدثة</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
-        :root { --accent: #ffd700; --bg: #0b0c10; --panel: #1f2833; --purple: #6f42c1; }
-        body { font-family: 'Cairo', sans-serif; background: var(--bg); color: white; margin: 0; padding-top: 140px; overflow-x: hidden; }
-
-        /* منطقة الإعلانات المتحركة */
-        #ad-top-layer {
-            position: fixed; top: 0; left: 0; width: 100%; height: 120px;
-            background: #000; z-index: 1000; border-bottom: 3px solid var(--accent);
-            display: flex; justify-content: center; align-items: center; overflow: hidden;
-        }
-        #ad-top-layer img { 
-            width: 100%; height: 100%; object-fit: cover; 
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s; 
-        }
-        .ad-slide-in { animation: slideIn 0.8s forwards; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        :root { --accent: #ffd700; --bg: #0b0c10; --purple: #6f42c1; --red: #ff4d4d; }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); color: white; margin: 0; padding-top: 140px; }
+        
+        #ad-top-layer { position: fixed; top: 0; left: 0; width: 100%; height: 120px; background: #000; z-index: 1000; border-bottom: 3px solid var(--accent); display: flex; justify-content: center; align-items: center; }
+        #ad-top-layer img { width: 100%; height: 100%; object-fit: cover; }
 
         .container { max-width: 600px; margin: 0 auto; padding: 20px; text-align: center; }
-        .stats-container { display: flex; gap: 15px; margin-bottom: 30px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
-        .stat-card { flex: 1; }
+        .stats-container { display: flex; gap: 15px; margin-bottom: 30px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; }
         .stat-card span { display: block; font-size: 1.4rem; color: var(--accent); font-weight: bold; }
 
-        .upload-zone {
-            width: 100%; height: 280px; border: 2px dashed rgba(255,215,0,0.3);
-            border-radius: 25px; background: rgba(255,255,255,0.02);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            position: relative; overflow: hidden;
-        }
+        .upload-zone { width: 100%; height: 280px; border: 2px dashed rgba(255,215,0,0.3); border-radius: 25px; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; background: rgba(255,255,255,0.02); }
         #preview-img { width: 100%; height: 100%; object-fit: cover; display: none; }
         .file-input { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
 
-        /* رسالة الخصوصية */
-        .privacy-note { font-size: 0.75rem; color: #888; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 5px; }
-
-        .btn-main {
-            width: 100%; padding: 20px; border: none; border-radius: 50px;
-            font-size: 1.2rem; font-weight: 700; cursor: pointer;
-            background: linear-gradient(90deg, var(--purple), #8a2be2);
-            color: white; margin-top: 25px; display: none;
-            box-shadow: 0 10px 20px rgba(111, 66, 193, 0.4);
-        }
-
-        #result-screen { display: none; background: var(--panel); padding: 25px; border-radius: 20px; margin-top: 20px; border: 1px solid var(--accent); text-align: right; }
-        .analysis-box { margin-top: 15px; padding: 10px; border-radius: 10px; background: rgba(0,0,0,0.2); }
-        .tag-pos { color: #2ecc71; font-weight: bold; }
-        .tag-neg { color: #e74c3c; font-weight: bold; }
+        .btn-main { width: 100%; padding: 20px; border: none; border-radius: 50px; font-size: 1.2rem; font-weight: 700; cursor: pointer; color: white; margin-top: 20px; display: none; }
+        
+        #result-screen { display: none; margin-top: 20px; text-align: right; }
+        .roast-box { background: rgba(255, 77, 77, 0.1); padding: 20px; border-radius: 15px; border-right: 5px solid var(--red); }
+        .hero-box { border: 3px solid var(--accent); padding: 25px; border-radius: 20px; background: #000; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div id="ad-top-layer">
-        <img id="current-ad-img" src="" class="ad-slide-in">
-    </div>
+    <div id="ad-top-layer"><img id="current-ad-img" src=""></div>
 
     <div class="container">
-        <h1 id="logo" style="cursor:pointer; font-weight: 900;" ondblclick="accessAdmin()">Face Role AI 🎬</h1>
+        <h1 id="logo" ondblclick="accessAdmin()" style="cursor:pointer; font-weight:900;">Face Role AI 🎬</h1>
         
         <div class="stats-container">
-            <div class="stat-card"><p>إجمالي الزيارات</p><span id="total-views">0</span></div>
-            <div class="stat-card"><p>متصل الآن</p><span id="live-users">0</span></div>
+            <div class="stat-card">إجمالي الزيارات <span id="total-views">0</span></div>
+            <div class="stat-card">متصل الآن <span id="live-users">0</span></div>
         </div>
 
         <div id="main-view">
             <div class="upload-zone">
                 <input type="file" id="user-photo" class="file-input" accept="image/*">
-                <div id="upload-text">📸 ارفع صورتك لبدء التحليل</div>
+                <div id="upload-text">📸 ارفع صورتك (رجل أو امرأة) لنقرر مصيرك</div>
                 <img id="preview-img">
             </div>
-            <div class="privacy-note">
-                <span>🔒</span> نلتزم بخصوصيتك: الصورة تُعالج في متصفحك فقط ولا يتم حفظها نهائياً.
-            </div>
-            <button id="analyze-btn" class="btn-main" onclick="processAI()">بدء التحليل الذكي 🚀</button>
+            <p style="font-size:0.7rem; color:#666; margin-top:10px;">🔒 خصوصيتك محفوظة: المعالجة تتم داخل جهازك فقط.</p>
+            <button id="analyze-btn" class="btn-main" style="background:var(--purple);" onclick="processAI()">بدء التحليل الذكي 🚀</button>
         </div>
 
-        <div id="result-screen">
-            <h2 id="role-title" style="color: var(--accent); text-align: center;"></h2>
-            <div class="analysis-box">
-                <p><span class="tag-pos">● التقييم الإيجابي:</span> <span id="pos-desc"></span></p>
-            </div>
-            <div class="analysis-box">
-                <p><span class="tag-neg">● النقد البناء:</span> <span id="neg-desc"></span></p>
-            </div>
-            <button onclick="location.reload()" class="btn-main" style="display:block;">تحليل صورة أخرى 🔄</button>
-        </div>
+        <div id="result-screen"></div>
     </div>
 
     <script>
-        let adQueue = [];
-        let currentAdIndex = 0;
+        async function init() {
+            const URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+            await faceapi.nets.tinyFaceDetector.loadFromUri(URL);
+            await faceapi.nets.faceExpressionNet.loadFromUri(URL);
+            await faceapi.nets.faceLandmark68Net.loadFromUri(URL);
+            await faceapi.nets.ageGenderNet.loadFromUri(URL);
+            sync(); setInterval(sync, 5000);
+        }
 
-        // نظام تبديل الإعلانات الذكي
-        async function syncData() {
+        async function sync() {
             const res = await fetch('/api/site-data');
             const data = await res.json();
-            
             document.getElementById('total-views').innerText = data.totalViews.toLocaleString();
             document.getElementById('live-users').innerText = data.activeUsers.toLocaleString();
-            
-            // تحديث قائمة الإعلانات (إذا وجد إعلان حالي وقادم)
-            if (data.currentAd) {
-                const adImg = document.getElementById('current-ad-img');
-                if (adImg.src !== window.location.origin + data.currentAd) {
-                    adImg.style.opacity = '0';
-                    setTimeout(() => {
-                        adImg.src = data.currentAd;
-                        adImg.style.opacity = '1';
-                        adImg.classList.remove('ad-slide-in');
-                        void adImg.offsetWidth; // Trigger reflow
-                        adImg.classList.add('ad-slide-in');
-                    }, 500);
-                }
-            }
+            if(data.currentAd) document.getElementById('current-ad-img').src = data.currentAd;
         }
 
-        function accessAdmin() {
-            const pass = prompt("كلمة السر للإدارة:");
-            if (pass === "SDaderta") window.location.href = "/admin.html";
-        }
+        function accessAdmin() { if(prompt("كلمة السر:") === "SDaderta") window.location.href = "/admin.html"; }
 
-        const fileInput = document.getElementById('user-photo');
-        fileInput.onchange = (e) => {
+        document.getElementById('user-photo').onchange = (e) => {
             const reader = new FileReader();
             reader.onload = (ev) => {
                 document.getElementById('preview-img').src = ev.target.result;
@@ -139,34 +86,51 @@
         };
 
         async function processAI() {
-            document.getElementById('analyze-btn').innerText = "جاري التحليل...";
-            const detections = await faceapi.detectAllFaces(document.getElementById('preview-img'), new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+            document.getElementById('analyze-btn').innerText = "جاري كشف الهوية...";
+            const detections = await faceapi.detectAllFaces(document.getElementById('preview-img'), new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withAgeAndGender();
             
-            setTimeout(() => {
-                document.getElementById('main-view').style.display = 'none';
-                document.getElementById('result-screen').style.display = 'block';
-                showResult(detections.length > 0 ? Object.keys(detections[0].expressions).reduce((a, b) => detections[0].expressions[a] > detections[0].expressions[b] ? a : b) : 'neutral');
-            }, 2000);
-        }
+            if (detections.length === 0) return alert("لم يتم العثور على وجه!");
 
-        function showResult(emotion) {
-            const roles = {
-                happy: { t: "البطل الكوميدي الأسطوري", p: "تملك كاريزما مبهجة تجعل الجمهور يبتسم فور رؤيتك، طاقتك الإيجابية هي سر نجاحك.", n: "قد تبالغ في المزاح مما يجعل البعض يواجه صعوبة في أخذ قراراتك الجدية على محمل الثقة." },
-                sad: { t: "نجم الدراما العميقة", p: "إحساسك العالي يجعلك تتقن الأدوار التي تلمس القلوب، ملامحك تنطق قبل لسانك.", n: "تميل للانعزال وتغليب العاطفة، مما قد يجعلك تبدو ضعيفاً في مواقف تتطلب الحزم." },
-                angry: { t: "قائد الأكشن / الشرير الداهية", p: "حضورك قوي جداً، ملامحك تعطي انطباعاً بالهيبة والسيطرة المطلقة.", n: "حدة تعاملك قد تخلق حواجز بينك وبين فريق عملك، حاول إظهار الجانب اللين أحياناً." },
-                neutral: { t: "العميل السري الغامض", p: "ثباتك الانفعالي مذهل، لا يمكن لأحد اختراق أفكارك، أنت الشخص المناسب للمهمات الصعبة.", n: "برودك الزائد قد يفسره البعض على أنه عدم اهتمام، مما قد يؤثر على علاقاتك الاجتماعية." }
-            };
-            const res = roles[emotion] || roles.neutral;
-            document.getElementById('role-title').innerText = res.t;
-            document.getElementById('pos-desc').innerText = res.p;
-            document.getElementById('neg-desc').innerText = res.n;
-        }
+            let count = parseInt(localStorage.getItem('attempts') || 0) + 1;
+            localStorage.setItem('attempts', count);
 
-        async function init() {
-            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/');
-            await faceapi.nets.faceExpressionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/');
-            syncData();
-            setInterval(syncData, 5000);
+            const gender = detections[0].gender;
+            const resDiv = document.getElementById('result-screen');
+            document.getElementById('main-view').style.display = 'none';
+            resDiv.style.display = 'block';
+
+            if (count % 100 === 0) {
+                const title = (gender === 'male') ? "البطل الأسطوري" : "الملكة الأسطورية";
+                resDiv.innerHTML = `<div class="hero-box">
+                    <h1 style="color:var(--accent)">🌟 ${title} 🌟</h1>
+                    <p>المحاولة رقم ${count}: ملامحك نادرة جداً، أنت النجم الحقيقي اليوم!</p>
+                    <button onclick="location.reload()" class="btn-main" style="display:block; background:var(--accent); color:#000;">أعد المحاولة مرة أخرى 🔄</button>
+                </div>`;
+            } else {
+                const roasts = {
+                    male: {
+                        roles: ["لص بائس", "كومبارس صامت", "سائق غاضب", "موظف بوفيه محبط"],
+                        reasons: ["ملامحك توحي بأنك تدفع الأبواب المكتوب عليها اسحب.", "وجهك يبدو كخطأ برمجى في نظام البشر."]
+                    },
+                    female: {
+                        roles: ["خاطبة فاشلة", "بطلة مسلسل نكد", "جارة تراقب الجميع", "مدربة طبخ تحرق الطعام"],
+                        reasons: ["نظراتكِ توحي بأنكِ تجهزين خطة لعمل بلوك للجميع.", "ملامحكِ مثالية لدور شخص يغضب بدون سبب."]
+                    }
+                };
+                const list = roasts[gender] || roasts.male;
+                const rRole = list.roles[Math.floor(Math.random()*list.roles.length)];
+                const rReason = list.reasons[Math.floor(Math.random()*list.reasons.length)];
+                
+                resDiv.innerHTML = `
+                    <h2 style="color:var(--red)">🎭 دورك: ${rRole}</h2>
+                    <div class="roast-box">
+                        <p style="color:var(--red); font-weight:bold;">لماذا وقع الاختيار؟ (الجنس: ${gender === 'male' ? 'ذكر' : 'أنثى'})</p>
+                        <p>${rReason}</p>
+                    </div>
+                    <p style="font-size:0.8rem; color:#555; margin-top:10px;">المحاولة: ${count} (البطل في 100)</p>
+                    <button onclick="location.reload()" class="btn-main" style="display:block; background:var(--red);">أعد المحاولة مرة أخرى 🔄</button>
+                `;
+            }
         }
         window.onload = init;
     </script>
