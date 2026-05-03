@@ -23,12 +23,11 @@
             font-family: 'Cairo', sans-serif;
             display: flex;
             height: 100vh;
-            overflow: hidden;
         }
 
-        /* Sidebar */
+        /* Sidebar القائمة الجانبية */
         .sidebar {
-            width: 260px;
+            width: 280px;
             background: var(--sidebar);
             border-left: 2px solid var(--gold);
             display: flex;
@@ -36,14 +35,21 @@
             padding: 30px 15px;
         }
 
-        .sidebar h2 { color: var(--gold); text-align: center; font-weight: 900; margin-bottom: 30px; }
+        .sidebar h2 { 
+            color: var(--gold); 
+            text-align: center; 
+            font-weight: 900; 
+            margin-bottom: 30px; 
+            border-bottom: 2px solid var(--gold); 
+            padding-bottom: 10px; 
+        }
 
-        .nav-info {
-            background: rgba(255,255,255,0.05);
+        .status-box {
+            background: #111;
             padding: 15px;
             border-radius: 10px;
+            font-size: 0.8rem;
             margin-bottom: 20px;
-            font-size: 0.85rem;
         }
 
         .btn-view-site {
@@ -54,31 +60,18 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            margin-top: auto;
             text-decoration: none;
             text-align: center;
+            margin-top: auto;
         }
 
-        /* Main Content */
-        .main {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
+        /* Main Content المحتوى الرئيسي */
+        .main { flex: 1; padding: 30px; overflow-y: auto; }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 15px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 20px;
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+            gap: 25px; 
         }
 
         .card {
@@ -86,159 +79,230 @@
             padding: 25px;
             border-radius: 15px;
             border: 1px solid rgba(255, 215, 0, 0.1);
-            position: relative;
         }
 
-        .card h3 { color: var(--gold); margin-bottom: 20px; font-size: 1.1rem; border-right: 4px solid var(--gold); padding-right: 10px; }
-
-        /* Real-time Monitor Style */
-        .live-monitor {
-            text-align: center;
-            background: rgba(46, 204, 113, 0.05);
-            border: 1px solid var(--success);
+        .card h3 { 
+            color: var(--gold); 
+            margin-bottom: 20px; 
+            border-right: 4px solid var(--gold); 
+            padding-right: 10px; 
         }
-        .live-number { font-size: 3.5rem; font-weight: 900; color: var(--success); display: block; }
 
-        /* Inputs & Buttons */
-        label { display: block; margin-bottom: 10px; font-size: 0.9rem; color: #ccc; }
-        input[type="number"], input[type="file"] {
-            width: 100%;
-            padding: 12px;
-            background: #0b0c10;
-            border: 1px solid #444;
-            border-radius: 8px;
+        /* Monitor المراقبة الحية */
+        .live-monitor { 
+            text-align: center; 
+            background: rgba(46, 204, 113, 0.05); 
+            border: 1px solid var(--success); 
+        }
+        .live-number { 
+            font-size: 4rem; 
+            font-weight: 900; 
+            color: var(--success); 
+            display: block; 
+        }
+
+        /* Forms المدخلات */
+        label { display: block; margin-top: 15px; margin-bottom: 5px; font-size: 0.9rem; color: #aaa; }
+        input {
+            width: 100%; 
+            padding: 12px; 
+            background: #0b0c10; 
+            border: 1px solid #444; 
+            border-radius: 8px; 
             color: white;
-            margin-bottom: 15px;
+            font-family: 'Cairo', sans-serif;
         }
 
         .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
+            width: 100%; 
+            padding: 12px; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            margin-top: 15px;
+            font-family: 'Cairo', sans-serif;
         }
         .btn-gold { background: var(--gold); color: black; }
-        .btn-danger { background: var(--danger); color: white; margin-top: 10px; }
         .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
 
-        .btn:hover { opacity: 0.8; }
-
+        /* Ads List قائمة الإعلانات المرفوعة */
+        .ad-item {
+            background: #000; 
+            padding: 15px; 
+            border-radius: 10px; 
+            margin-top: 10px;
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            border: 1px solid #333;
+        }
+        .ad-item img { width: 60px; height: 40px; object-fit: cover; border-radius: 5px; }
+        .ad-info { flex: 1; margin-right: 15px; }
+        .ad-info p { font-size: 0.8rem; color: #ccc; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <h2>إدارة Face Role AI</h2>
-        <div class="nav-info">
-            <p>🔴 حالة النظام: متصل</p>
-            <p>🕒 تحديث تلقائي: كل 3 ثوانٍ</p>
+        <h2>غرفة التحكم</h2>
+        <div class="status-box">
+            <p>🟢 حالة السيرفر: متصل</p>
+            <p id="last-sync">تحديث: جاري المزامنة...</p>
         </div>
-        <a href="/" class="btn-view-site">فتح الموقع الرئيسي</a>
+        <a href="/" target="_blank" class="btn-view-site">زيارة الموقع الرئيسي</a>
     </div>
 
     <div class="main">
-        <div class="header">
-            <h1>لوحة التحكم المحدثة</h1>
-            <div id="status-badge" style="color: var(--success);">● يعمل الآن</div>
-        </div>
-
         <div class="grid">
+            
             <div class="card live-monitor">
                 <h3>👥 المستخدمين الحقيقيين (الآن)</h3>
                 <span id="real-users-count" class="live-number">0</span>
-                <p style="color: #666; font-size: 0.8rem;">بشر حقيقيون يتصفحون موقعك حالياً</p>
+                <p style="color: #666;">عدد الأشخاص الفعليين داخل الموقع حالياً</p>
             </div>
 
             <div class="card">
-                <h3>📊 التحكم بالإحصائيات العامة</h3>
-                <label>تغيير إجمالي الزيارات (الظاهر للناس):</label>
-                <input type="number" id="total-views-input" placeholder="مثال: 120000">
-                <button class="btn btn-gold" onclick="updateStats('total')">تثبيت الإجمالي</button>
-
-                <hr style="margin: 20px 0; border-color: #444;">
-
-                <label>تغيير عدد المتصلين (الوهمي):</label>
-                <input type="number" id="active-users-input" placeholder="مثال: 8500">
-                <button class="btn btn-gold" onclick="updateStats('active')">تثبيت المتصلين الوهمي</button>
-            </div>
-
-            <div class="card">
-                <h3>📺 إدارة الإعلانات الثابتة</h3>
-                <label>رفع صورة إعلان جديدة:</label>
+                <h3>📅 إضافة إعلان مجدول</h3>
+                <label>صورة الإعلان:</label>
                 <input type="file" id="ad-file" accept="image/*">
-                <button class="btn btn-success" onclick="uploadAd()">رفع ونشر فوراً</button>
                 
-                <button class="btn btn-danger" onclick="deleteAd()">🗑️ إزالة الإعلان الحالي</button>
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label>وقت البدء:</label>
+                        <input type="time" id="start-time">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>وقت الانتهاء:</label>
+                        <input type="time" id="end-time">
+                    </div>
+                </div>
                 
-                <div style="margin-top: 15px; font-size: 0.8rem; color: #888;">
-                    * سيظهر الإعلان في أعلى الموقع ولن يختفي حتى تقوم بحذفه من هنا.
+                <button class="btn btn-success" onclick="uploadAd()">رفع وجدولة الإعلان ✅</button>
+            </div>
+
+            <div class="card">
+                <h3>📺 إدارة الإعلانات المرفوعة</h3>
+                <div id="ads-list">
+                    <p style="text-align: center; color: #555; padding: 20px;">جاري تحميل القائمة...</p>
                 </div>
             </div>
+
+            <div class="card">
+                <h3>📊 تعديل الإحصائيات (الأرقام الوهمية)</h3>
+                <label>إجمالي الزيارات المعروض:</label>
+                <input type="number" id="total-views-input" placeholder="مثلاً: 500000">
+                <button class="btn btn-gold" onclick="updateStats('total')">تحديث الإجمالي</button>
+
+                <label>عدد المتصلين المعروض:</label>
+                <input type="number" id="active-users-input" placeholder="مثلاً: 12000">
+                <button class="btn btn-gold" onclick="updateStats('active')">تحديث المتصلين</button>
+            </div>
+
         </div>
     </div>
 
     <script>
-        // دالة لجلب البيانات وتحديث اللوحة تلقائياً
+        // دالة تحديث لوحة التحكم بالكامل
         async function refreshDashboard() {
             try {
                 const res = await fetch('/api/site-data');
                 const data = await res.json();
                 
-                // تحديث عدد المستخدمين الحقيقيين
+                // تحديث العداد الحقيقي
                 document.getElementById('real-users-count').innerText = data.realUsersCount;
-                
-                // وضع القيم الحالية في الحقول كمرجع
-                if(!document.getElementById('total-views-input').value) {
-                    document.getElementById('total-views-input').placeholder = "الحالي: " + data.totalViews;
-                }
-                if(!document.getElementById('active-users-input').value) {
-                    document.getElementById('active-users-input').placeholder = "الحالي: " + data.activeUsers;
+                document.getElementById('last-sync').innerText = "تحديث: " + new Date().toLocaleTimeString();
+
+                // تحديث قائمة الإعلانات
+                const listDiv = document.getElementById('ads-list');
+                if (data.ads && data.ads.length > 0) {
+                    listDiv.innerHTML = "";
+                    data.ads.forEach(ad => {
+                        listDiv.innerHTML += `
+                            <div class="ad-item">
+                                <img src="${ad.url}">
+                                <div class="ad-info">
+                                    <p>من: <b>${ad.start}</b> | إلى: <b>${ad.end}</b></p>
+                                </div>
+                                <button class="btn btn-danger" style="width: auto; margin:0; padding: 5px 12px;" onclick="deleteAd(${ad.id})">حذف</button>
+                            </div>
+                        `;
+                    });
+                } else {
+                    listDiv.innerHTML = `<p style="text-align: center; color: #555; padding: 20px;">لا توجد إعلانات مجدولة حالياً</p>`;
                 }
             } catch (error) {
-                console.error("خطأ في المزامنة مع السيرفر");
+                console.error("خطأ في الاتصال بالسيرفر");
             }
         }
 
-        // تحديث الإحصائيات الوهمية
-        async function updateStats(type) {
-            const inputId = type === 'total' ? 'total-views-input' : 'active-users-input';
-            const value = document.getElementById(inputId).value;
-            if(!value) return alert("يرجى إدخال رقم أولاً");
-
-            const res = await fetch('/api/update-manual-stats', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type, value })
-            });
-            const data = await res.json();
-            if(data.success) alert("تم تحديث الأرقام الظاهرة للمستخدمين!");
-        }
-
-        // رفع إعلان
+        // دالة رفع الإعلان مع المزامنة
         async function uploadAd() {
-            const fileInput = document.getElementById('ad-file');
-            if(fileInput.files.length === 0) return alert("اختر ملف صورة");
+            const file = document.getElementById('ad-file').files[0];
+            const start = document.getElementById('start-time').value;
+            const end = document.getElementById('end-time').value;
+
+            if(!file || !start || !end) {
+                return alert("يرجى اختيار الصورة وتحديد وقت البداية والنهاية!");
+            }
 
             const formData = new FormData();
-            formData.append('adImage', fileInput.files[0]);
+            formData.append('adImage', file);
+            formData.append('startTime', start);
+            formData.append('endTime', end);
 
-            const res = await fetch('/api/upload-ad', { method: 'POST', body: formData });
-            const data = await res.json();
-            if(data.success) alert("تم نشر الإعلان بنجاح!");
+            try {
+                const res = await fetch('/api/upload-ad', { method: 'POST', body: formData });
+                const result = await res.json();
+                if(result.success) {
+                    alert("تم رفع الإعلان وجدولته بنجاح!");
+                    refreshDashboard();
+                }
+            } catch (e) {
+                alert("حدث خطأ أثناء الرفع");
+            }
         }
 
-        // حذف إعلان
-        async function deleteAd() {
-            if(!confirm("هل تريد حذف الإعلان من الموقع؟")) return;
-            const res = await fetch('/api/delete-ad', { method: 'POST' });
-            const data = await res.json();
-            if(data.success) alert("تم حذف الإعلان.");
+        // دالة حذف إعلان معين
+        async function deleteAd(id) {
+            if(!confirm("هل أنت متأكد من حذف هذا الإعلان؟")) return;
+            
+            try {
+                const res = await fetch('/api/delete-ad', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ id })
+                });
+                const result = await res.json();
+                if(result.success) refreshDashboard();
+            } catch (e) {
+                alert("خطأ في الحذف");
+            }
         }
 
-        // التحديث التلقائي كل 3 ثوانٍ
+        // تحديث الأرقام الوهمية
+        async function updateStats(type) {
+            const inputId = (type === 'total') ? 'total-views-input' : 'active-users-input';
+            const val = document.getElementById(inputId).value;
+            
+            if(!val) return alert("أدخل الرقم المطلوب أولاً");
+
+            try {
+                const res = await fetch('/api/update-manual-stats', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ type, value: val })
+                });
+                const result = await res.json();
+                if(result.success) alert("تم تحديث الإحصائيات المعروضة بنجاح!");
+            } catch (e) {
+                alert("خطأ في التحديث");
+            }
+        }
+
+        // تشغيل التحديث التلقائي كل 3 ثوانٍ لمراقبة الزوار الحقيقيين
         setInterval(refreshDashboard, 3000);
         window.onload = refreshDashboard;
     </script>
