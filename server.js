@@ -10,24 +10,52 @@ app.use(express.json());
 app.use(express.static(__dirname));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// نظام تتبع المستخدمين الحقيقيين (Active Sessions)
+// ذاكرة مؤقتة للزوار الحقيقيين
 let realActiveUsers = new Set();
 
-// --- إدارة البيانات الدائمة ---
+// --- 1. محرك المحاكاة الواقعي (التحديث التلقائي للأرقام) ---
+
+function startSimulation() {
+    // تحديث إجمالي الزيارات كل دقيقتين (زيادة بـ 300 أو أكثر)
+    setInterval(() => {
+        const extraViews = Math.floor(Math.random() * 150) + 300; // زيادة عشوائية بين 300 و 450
+        config.totalViews += extraViews;
+        saveConfig(config);
+        console.log(`[Simulation] Views increased by ${extraViews}. Total: ${config.totalViews}`);
+    }, 120000); // 120,000ms = 2 minutes
+
+    // تحديث المتصلين الآن كل دقيقة (تذبذب واقعي: زيادة ونقصان)
+    setInterval(() => {
+        // مصفوفة التغيرات المطلوبة: [10, -1, 5, -6, 26, ...]
+        const behavior = [10, -1, 5, -6, 26, 12, -8, 33, -4, 18];
+        const randomChange = behavior[Math.floor(Math.random() * behavior.length)];
+        
+        config.activeUsers += randomChange;
+
+        // حماية: التأكد من أن الرقم لا ينزل عن مستوى معين ويستمر في الصعود الطردي
+        if (config.activeUsers < 2000) config.activeUsers += 150;
+        
+        saveConfig(config);
+        console.log(`[Simulation] Active users changed by (${randomChange}). Current: ${config.activeUsers}`);
+    }, 60000); // 60,000ms = 1 minute
+}
+
+// --- 2. إدارة ملف الإعدادات (التخزين الدائم) ---
+
 function saveConfig(config) {
     try {
         fs.writeFileSync(DATA_FILE, JSON.stringify(config, null, 2));
     } catch (err) {
-        console.error("خطأ في حفظ البيانات:", err);
+        console.error("Error saving config:", err);
     }
 }
 
 function loadConfig() {
     if (!fs.existsSync(DATA_FILE)) {
         const initial = { 
-            totalViews: 113000, 
-            activeUsers: 9452, 
-            ads: [] // مصفوفة الإعلانات المجدولة
+            totalViews: 150000, 
+            activeUsers: 8400, 
+            ads: [] 
         };
         saveConfig(initial);
         return initial;
@@ -35,17 +63,19 @@ function loadConfig() {
     try {
         return JSON.parse(fs.readFileSync(DATA_FILE));
     } catch (err) {
-        return { totalViews: 113000, activeUsers: 9452, ads: [] };
+        return { totalViews: 150000, activeUsers: 8400, ads: [] };
     }
 }
 
 let config = loadConfig();
+startSimulation(); // تفعيل نظام المحاكاة فور التشغيل
 
-// --- إعدادات رفع الصور (Multer) ---
+// --- 3. إعدادات رفع صور الإعلانات ---
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const dir = './uploads';
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir);
         cb(null, dir);
     },
     filename: (req, file, cb) => {
@@ -54,19 +84,15 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// --- المسارات البرمجية (APIs) ---
+// --- 4. المسارات البرمجية (APIs) ---
 
-// 1. جلب بيانات الموقع وتتبع النشاط الحقيقي
+// جلب بيانات الموقع ومراقبة الزوار الحقيقيين
 app.get('/api/site-data', (req, res) => {
-    // تتبع الـ IP للمستخدم
     const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     realActiveUsers.add(userIp);
 
-    // إزالة المستخدم من القائمة بعد 30 ثانية من الخمول
+    // إزالة المستخدم الحقيقي من القائمة بعد 30 ثانية من الخمول
     setTimeout(() => { realActiveUsers.delete(userIp); }, 30000);
-
-    // زيادة وهمية بسيطة للزيارات
-    config.totalViews += Math.floor(Math.random() * 2);
 
     res.json({
         ...config,
@@ -74,57 +100,50 @@ app.get('/api/site-data', (req, res) => {
     });
 });
 
-// 2. رفع إعلان جديد مع الجدولة الزمنية
+// رفع إعلان مجدول
 app.post('/api/upload-ad', upload.single('adImage'), (req, res) => {
     const { startTime, endTime } = req.body;
-    
     if (req.file && startTime && endTime) {
         const newAd = {
             id: Date.now(),
             url: `/uploads/${req.file.filename}`,
-            start: startTime, // تنسيق HH:mm
-            end: endTime      // تنسيق HH:mm
+            start: startTime,
+            end: endTime
         };
-        
-        config.ads.push(newAd); // إضافة الإعلان للقائمة
+        config.ads.push(newAd);
         saveConfig(config);
         res.json({ success: true });
     } else {
-        res.status(400).json({ success: false, message: "بيانات ناقصة" });
+        res.status(400).json({ success: false });
     }
 });
 
-// 3. حذف إعلان معين من القائمة
+// حذف إعلان
 app.post('/api/delete-ad', (req, res) => {
     const { id } = req.body;
-    if (!id) return res.status(400).json({ success: false });
-
-    // تصفية المصفوفة لإزالة الإعلان المطلوب
     config.ads = config.ads.filter(ad => ad.id !== parseInt(id));
     saveConfig(config);
     res.json({ success: true });
 });
 
-// 4. تحديث الإحصائيات اليدوية (الرقم الوهمي)
+// تحديث الإحصائيات يدوياً من لوحة التحكم
 app.post('/api/update-manual-stats', (req, res) => {
     const { type, value } = req.body;
     if (type === 'total') config.totalViews = parseInt(value);
     if (type === 'active') config.activeUsers = parseInt(value);
-    
     saveConfig(config);
     res.json({ success: true });
 });
 
-// --- تشغيل السيرفر ---
+// --- 5. تشغيل السيرفر ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads');
     console.log(`
     =============================================
-    🚀 السيرفر المطور يعمل بنجاح
-    📅 نظام جدولة الإعلانات: مفعل
-    👥 تتبع المستخدمين الحقيقيين: مفعل
-    💾 قاعدة بيانات JSON: متصلة
+    ✅ Face Role AI Server is LIVE
+    🌐 Port: ${PORT}
+    🤖 Simulation: ACTIVE (Auto-increase stats)
+    📅 Ads Scheduler: READY
     =============================================
     `);
 });
