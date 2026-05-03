@@ -4,16 +4,16 @@ const multer = require('multer');
 const fs = require('fs');
 
 const app = express();
-const DATA_FILE = './site-config.json'; // ملف حفظ البيانات الدائم
+const DATA_FILE = './site-config.json';
 
 app.use(express.json());
 app.use(express.static(__dirname));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// --- 1. نظام تتبع المستخدمين الحقيقيين ---
-let realActiveUsers = new Set(); 
+// نظام تتبع المستخدمين الحقيقيين (Active Sessions)
+let realActiveUsers = new Set();
 
-// --- 2. إدارة البيانات (حفظ وتحميل) ---
+// --- إدارة البيانات الدائمة ---
 function saveConfig(config) {
     try {
         fs.writeFileSync(DATA_FILE, JSON.stringify(config, null, 2));
@@ -24,78 +24,107 @@ function saveConfig(config) {
 
 function loadConfig() {
     if (!fs.existsSync(DATA_FILE)) {
-        const initial = { totalViews: 113000, activeUsers: 9452, currentAd: "" };
+        const initial = { 
+            totalViews: 113000, 
+            activeUsers: 9452, 
+            ads: [] // مصفوفة الإعلانات المجدولة
+        };
         saveConfig(initial);
         return initial;
     }
-    return JSON.parse(fs.readFileSync(DATA_FILE));
+    try {
+        return JSON.parse(fs.readFileSync(DATA_FILE));
+    } catch (err) {
+        return { totalViews: 113000, activeUsers: 9452, ads: [] };
+    }
 }
 
 let config = loadConfig();
 
-// --- 3. إعداد رفع الصور (الإعلانات) ---
+// --- إعدادات رفع الصور (Multer) ---
 const storage = multer.diskStorage({
-    destination: './uploads',
+    destination: (req, file, cb) => {
+        const dir = './uploads';
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+    },
     filename: (req, file, cb) => {
         cb(null, 'ad-' + Date.now() + path.extname(file.originalname));
     }
 });
 const upload = multer({ storage: storage });
 
-// --- 4. المسارات البرمجية (APIs) ---
+// --- المسارات البرمجية (APIs) ---
 
-// جلب بيانات الموقع + تتبع الزوار الحقيقيين
+// 1. جلب بيانات الموقع وتتبع النشاط الحقيقي
 app.get('/api/site-data', (req, res) => {
-    // تتبع الـ IP للمستخدم الحالي
+    // تتبع الـ IP للمستخدم
     const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     realActiveUsers.add(userIp);
 
-    // اعتبار المستخدم غير نشط بعد 30 ثانية من آخر طلب
+    // إزالة المستخدم من القائمة بعد 30 ثانية من الخمول
     setTimeout(() => { realActiveUsers.delete(userIp); }, 30000);
 
-    // زيادة وهمية طفيفة للإحصائيات
+    // زيادة وهمية بسيطة للزيارات
     config.totalViews += Math.floor(Math.random() * 2);
 
     res.json({
         ...config,
-        realUsersCount: realActiveUsers.size // إرسال عدد المستخدمين الحقيقيين
+        realUsersCount: realActiveUsers.size
     });
 });
 
-// رفع إعلان جديد
+// 2. رفع إعلان جديد مع الجدولة الزمنية
 app.post('/api/upload-ad', upload.single('adImage'), (req, res) => {
-    if (req.file) {
-        config.currentAd = `/uploads/${req.file.filename}`;
+    const { startTime, endTime } = req.body;
+    
+    if (req.file && startTime && endTime) {
+        const newAd = {
+            id: Date.now(),
+            url: `/uploads/${req.file.filename}`,
+            start: startTime, // تنسيق HH:mm
+            end: endTime      // تنسيق HH:mm
+        };
+        
+        config.ads.push(newAd); // إضافة الإعلان للقائمة
         saveConfig(config);
         res.json({ success: true });
+    } else {
+        res.status(400).json({ success: false, message: "بيانات ناقصة" });
     }
 });
 
-// تحديث الإحصائيات (الوهمية) يدوياً
+// 3. حذف إعلان معين من القائمة
+app.post('/api/delete-ad', (req, res) => {
+    const { id } = req.body;
+    if (!id) return res.status(400).json({ success: false });
+
+    // تصفية المصفوفة لإزالة الإعلان المطلوب
+    config.ads = config.ads.filter(ad => ad.id !== parseInt(id));
+    saveConfig(config);
+    res.json({ success: true });
+});
+
+// 4. تحديث الإحصائيات اليدوية (الرقم الوهمي)
 app.post('/api/update-manual-stats', (req, res) => {
     const { type, value } = req.body;
     if (type === 'total') config.totalViews = parseInt(value);
     if (type === 'active') config.activeUsers = parseInt(value);
+    
     saveConfig(config);
     res.json({ success: true });
 });
 
-// حذف الإعلان
-app.post('/api/delete-ad', (req, res) => {
-    config.currentAd = "";
-    saveConfig(config);
-    res.json({ success: true });
-});
-
-// --- 5. تشغيل السيرفر ---
+// --- تشغيل السيرفر ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads');
     console.log(`
     =============================================
-    ✅ السيرفر المكتمل يعمل الآن
-    👥 نظام تتبع الحقيقيين: مفعل
-    💾 التخزين الدائم: مفعل
+    🚀 السيرفر المطور يعمل بنجاح
+    📅 نظام جدولة الإعلانات: مفعل
+    👥 تتبع المستخدمين الحقيقيين: مفعل
+    💾 قاعدة بيانات JSON: متصلة
     =============================================
     `);
 });
